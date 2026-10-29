@@ -1,0 +1,10 @@
+apiVersion: networking.gke.io/v1
+kind: GCPHTTPFilter
+metadata:
+  name: images-cdn-filter
+spec:
+  cachePolicy:
+    cacheMode: CACHE_ALL_STATIC
+    defaultTTL: 10s
+    cacheKeyPolicy:
+      includeQueryString: false

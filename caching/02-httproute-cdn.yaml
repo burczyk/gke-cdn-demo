@@ -1,0 +1,37 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app-routes
+spec:
+  parentRefs:
+  - kind: Gateway
+    name: external-http
+  rules:
+  # Route /images/* -> Cloud CDN + rewrite prefix to / -> gcs-proxy-svc
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /images
+    filters:
+    - type: ExtensionRef
+      extensionRef:
+        group: networking.gke.io
+        kind: GCPHTTPFilter
+        name: images-cdn-filter
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
+    backendRefs:
+    - name: gcs-proxy-svc
+      port: 80
+
+  # Default catch-all route / -> hello-svc
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: hello-svc
+      port: 80
