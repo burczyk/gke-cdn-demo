@@ -27,18 +27,6 @@ The Kubernetes manifests are split into two directories so you can deploy and ve
 > **Why an in-cluster `gcs-proxy` Service?**  
 > GKE Gateway `HTTPRoute` backends must be Kubernetes `Service`s (not direct GCS `BackendBucket`s, and the GKE Gateway controller continuously reconciles and overwrites manual edits to the underlying URL Map). Routing `/images/*` through a lightweight `nginx:alpine` Service lets GKE Gateway manage the load balancer natively while Cloud CDN caches responses at Google's edge.
 
----
-
-## Prerequisites & Environment Variables
-
-Open **Cloud Shell** (or a local terminal with `gcloud` and `kubectl` configured) and set your shared variables:
-
-```bash
-export PROJECT_ID=$(gcloud config get-value project)
-export REGION=europe-central2
-export BUCKET_NAME="${PROJECT_ID}-cdn-images"
-export CLUSTER_NAME=gateway-demo-cluster
-```
 
 ---
 
