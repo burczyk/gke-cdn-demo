@@ -172,6 +172,67 @@ On the second request, you should see an **`Age:`** header (e.g., `Age: 3`), con
 
 ---
 
+---
+
+## Step 6: Enable Cloud CDN Image Optimization (`imop/`)
+
+Cloud CDN Image Optimization dynamically resizes, crops, compresses, and converts images (`JPEG`, `PNG`, `WebP`, `AVIF`, `GIF`) at Google's edge when `?imop=...` query parameters are appended to `/images/*` URLs.
+
+Because GKE Gateway tracks `GCPHTTPFilter` policies per policy type (`cachePolicy` vs. `imageOptimizationPolicy`), `imop/` composes `images-imop-filter` alongside `images-cdn-filter` on the same `/images` route without duplicating your cache configuration:
+
+- **Active `cachePolicy` requirement:** Image Optimization requires caching on the same route (satisfied by `images-cdn-filter` from `caching/`).
+- **Input limits:** Max `20 MB` file size, max `8192 px` per dimension, max `67 MP` total resolution, and `HTTP 200` origin response with a valid image `Content-Type`.
+- **`Accept` header:** Client requests must include an image-compatible `Accept` header (such as `image/webp`, `image/avif`, `image/*`, or `*/*`).
+
+Apply `imop/` (after `caching/`):
+```bash
+kubectl apply -f imop/
+```
+
+### Verify Image Optimization
+
+1. **Inspect Kubernetes resources and the generated URL map:**
+   ```bash
+   kubectl get gcphttpfilter images-imop-filter -o yaml
+   kubectl describe httproute app-routes
+
+   export URL_MAP=$(kubectl get gateway external-http \
+     -o jsonpath='{.metadata.annotations.networking\.gke\.io/url-maps}')
+
+   gcloud beta compute url-maps describe "${URL_MAP##*/}" --format="yaml(pathMatchers)"
+   ```
+   Confirm both `cachePolicy` and `imageOptimizationPolicy` (`queryParameterInterpretation: ENABLED`) appear under the `/images/` and `/images` `routeRules`.
+
+2. **Test original vs. transformed image delivery (`GET` requests):**
+   > **Note:** Use `GET` requests (`curl -sD - -o /dev/null`) rather than `HEAD` (`curl -I`), as Google's edge skips image transformation on `HEAD` requests.
+
+   ```bash
+   export GATEWAY_IP=$(kubectl get gateway external-http -o jsonpath='{.status.addresses[0].value}')
+
+   # Original image (~5 MB JPEG)
+   curl -sD - -o /dev/null "http://${GATEWAY_IP}/images/summer.jpeg" \
+     | grep -iE '^(HTTP|Content-Type|Content-Length|Age)'
+
+   # Dynamically resized + converted to WebP at Google's edge
+   curl -sD - -o /tmp/summer-300.webp \
+     "http://${GATEWAY_IP}/images/summer.jpeg?imop=Resize,width=300;Convert,format=webp" \
+     | grep -iE '^(HTTP|Content-Type|Content-Length|Age)'
+
+   # Second request -> served from Cloud CDN edge cache (Age header appears)
+   sleep 2
+   curl -sD - -o /dev/null \
+     "http://${GATEWAY_IP}/images/summer.jpeg?imop=Resize,width=300;Convert,format=webp" \
+     | grep -iE '^(HTTP|Content-Type|Content-Length|Age)'
+   ```
+
+### Revert Image Optimization Only (Keep `caching/` Active)
+```bash
+kubectl apply -f caching/02-httproute-cdn.yaml
+kubectl delete -f imop/01-imop-filter.yaml
+```
+
+---
+
 ## Optional: Disable Caching or Clean Up
 
 ### Revert to Uncached Gateway (Keep Cluster & Gateway Running)

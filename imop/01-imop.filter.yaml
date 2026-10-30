@@ -1,0 +1,7 @@
+apiVersion: networking.gke.io/v1
+kind: GCPHTTPFilter
+metadata:
+  name: images-imop-filter
+spec:
+  imageOptimizationPolicy:
+    queryParameterInterpretation: ENABLED
