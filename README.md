@@ -67,7 +67,9 @@ The Kubernetes manifests are split into two directories so you can deploy and ve
    - **Release channel:** **Rapid** (or **Regular** if `1.35.2-gke.1751000+` is already the default in your region)
    - **Register to a fleet:** Leave **unchecked** (only required for Multi-Cluster Gateways)
 4. Under **Networking**, verify **Enable Gateway API** is set to **Standard**.
-5. Click **Create**. Once ready, click **Connect** and run the `gcloud container clusters get-credentials` command.
+5. Click **Create**. Once ready, click **Connect** (or run the command below) to configure `kubectl`:
+
+`gcloud container clusters get-credentials gateway-demo-cluster --location=europe-central2`
 
 ![Creating a GKE Autopilot Cluster](images/gke-step-1.png)
 
@@ -185,6 +187,6 @@ kubectl delete -f caching/01-cdn-filter.yaml
 kubectl delete -f caching/ --ignore-not-found
 kubectl delete -f base/ --ignore-not-found
 
-gcloud container clusters delete "${CLUSTER_NAME}" --location="${REGION}" --quiet
-gcloud storage rm -r "gs://${BUCKET_NAME}"
+gcloud container clusters delete gateway-demo-cluster --location=europe-central2 --quiet
+gcloud storage rm -r gs://<YOUR_BUCKET_NAME>
 ```
