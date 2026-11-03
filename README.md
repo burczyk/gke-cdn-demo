@@ -64,9 +64,8 @@ The Kubernetes manifests are split into two directories so you can deploy and ve
 3. Under **Cluster basics**:
    - **Name:** `gateway-demo-cluster`
    - **Region:** `europe-central2`
+4. Under **Advanced**:
    - **Release channel:** **Rapid** (or **Regular** if `1.35.2-gke.1751000+` is already the default in your region)
-   - **Register to a fleet:** Leave **unchecked** (only required for Multi-Cluster Gateways)
-4. Under **Networking**, verify **Enable Gateway API** is set to **Standard**.
 5. Click **Create**. Once ready, click **Connect** (or run the command below) to configure `kubectl`:
 
 `gcloud container clusters get-credentials gateway-demo-cluster --location=europe-central2`
